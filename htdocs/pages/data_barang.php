@@ -259,5 +259,3 @@ $barang = $conn->query("SELECT * FROM products");
 </div>
 
 <?php include $base_path . 'includes/footer.php'; ?>
-
-<!-- git status >> git add . >> git commit -m "deskripsi" >> git push origin main -->
