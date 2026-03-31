@@ -6,29 +6,29 @@ $error   = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $username = trim($_POST['username']);
-    $password = $_POST['password'];
-    $confirm  = $_POST['confirm_password'];
+    $name    = trim($_POST['name']);
+    $email   = trim($_POST['email']);
+    $passw   = $_POST['passw'];
+    $confirm = $_POST['confirm_passw'];
 
-    if (empty($username) || empty($password) || empty($confirm)) {
+    if (empty($name) || empty($email) || empty($passw) || empty($confirm)) {
         $error = 'Semua field wajib diisi!';
-    } elseif (strlen($password) < 6) {
+    } elseif (strlen($passw) < 6) {
         $error = 'Password minimal 6 karakter!';
-    } elseif ($password !== $confirm) {
+    } elseif ($passw !== $confirm) {
         $error = 'Konfirmasi password tidak cocok!';
     } else {
-        // Cek username sudah ada
-        $cek = $conn->prepare("SELECT id FROM users WHERE username = ?");
-        $cek->bind_param("s", $username);
+        // Cek email sudah ada
+        $cek = $conn->prepare("SELECT id FROM users WHERE email = ?");
+        $cek->bind_param("s", $email);
         $cek->execute();
         $cek->store_result();
 
         if ($cek->num_rows > 0) {
-            $error = 'Username sudah digunakan, coba yang lain!';
+            $error = 'Email sudah digunakan, coba yang lain!';
         } else {
-            $hashed = password_hash($password, PASSWORD_DEFAULT);
-            $stmt   = $conn->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
-            $stmt->bind_param("ss", $username, $hashed);
+            $stmt = $conn->prepare("INSERT INTO users (name, email, passw) VALUES (?, ?, ?)");
+            $stmt->bind_param("sss", $name, $email, $passw);
 
             if ($stmt->execute()) {
                 $success = 'Registrasi berhasil! Silakan login.';
@@ -120,19 +120,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         <form method="POST">
             <div class="form-group">
-                <label>Username</label>
-                <input type="text" name="username"
-                       value="<?= htmlspecialchars($_POST['username'] ?? '') ?>"
-                       placeholder="Masukkan username" required>
+                <label>Nama</label>
+                <input type="text" name="name"
+                       value="<?= htmlspecialchars($_POST['name'] ?? '') ?>"
+                       placeholder="Masukkan nama lengkap" required>
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email"
+                       value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
+                       placeholder="Masukkan email" required>
             </div>
             <div class="form-group">
                 <label>Password</label>
-                <input type="password" name="password"
+                <input type="password" name="passw"
                        placeholder="Minimal 6 karakter" required>
             </div>
             <div class="form-group">
                 <label>Konfirmasi Password</label>
-                <input type="password" name="confirm_password"
+                <input type="password" name="confirm_passw"
                        placeholder="Ulangi password" required>
             </div>
             <button type="submit" class="btn btn-primary btn-full">Daftar</button>

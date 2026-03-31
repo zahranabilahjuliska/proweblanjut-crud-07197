@@ -11,24 +11,24 @@ if (isset($_SESSION['user_id'])) {
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $username = trim($_POST['username']);
-    $password = $_POST['password'];
+    $email = trim($_POST['email']);
+    $passw = $_POST['passw'];
 
-    if (empty($username) || empty($password)) {
-        $error = 'Username dan password wajib diisi!';
+    if (empty($email) || empty($passw)) {
+        $error = 'Email dan password wajib diisi!';
     } else {
-        $stmt = $conn->prepare("SELECT id, password FROM users WHERE username = ?");
-        $stmt->bind_param("s", $username);
+        $stmt = $conn->prepare("SELECT id, name, passw FROM users WHERE email = ?");
+        $stmt->bind_param("s", $email);
         $stmt->execute();
         $result = $stmt->get_result();
 
         if ($result->num_rows === 1) {
             $user = $result->fetch_assoc();
 
-            if (password_verify($password, $user['password'])) {
+            if ($passw === $user['passw']) {
                 // Simpan session
-                $_SESSION['user_id']  = $user['id'];
-                $_SESSION['username'] = $username;
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['name']    = $user['name'];
 
                 header("Location: pages/dashboard.php");
                 exit;
@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $error = 'Password salah!';
             }
         } else {
-            $error = 'Username tidak ditemukan!';
+            $error = 'Email tidak ditemukan!';
         }
         $stmt->close();
     }
@@ -119,14 +119,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         <form method="POST">
             <div class="form-group">
-                <label>Username</label>
-                <input type="text" name="username"
-                       value="<?= htmlspecialchars($_POST['username'] ?? '') ?>"
-                       placeholder="Masukkan username" required>
+                <label>Email</label>
+                <input type="email" name="email"
+                       value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
+                       placeholder="Masukkan email" required>
             </div>
             <div class="form-group">
                 <label>Password</label>
-                <input type="password" name="password"
+                <input type="password" name="passw"
                        placeholder="Masukkan password" required>
             </div>
             <button type="submit" class="btn btn-primary btn-full">Login</button>
