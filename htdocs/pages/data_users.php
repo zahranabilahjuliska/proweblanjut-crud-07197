@@ -11,13 +11,13 @@ $page_title = 'Data Users';
 include $base_path . 'koneksi.php';
 include $base_path . 'includes/header.php';
 
-$users = $conn->query("SELECT * FROM users");
+$users = $conn->query("SELECT * FROM user");
 ?>
 
 <div class="card">
     <div class="card-header">
         <h3>&#128100; Daftar Users</h3>
-        <a href="../create.php?table=users" class="btn btn-primary">&#43; Tambah User</a>
+        <a href="../create.php?table=user" class="btn btn-primary">&#43; Tambah User</a>
     </div>
 
     <table>
@@ -39,8 +39,8 @@ $users = $conn->query("SELECT * FROM users");
                     <td><?= htmlspecialchars($row['email']) ?></td>
                     <td><?= $row['passw'] ?></td>
                     <td style="display:flex; gap:8px;">
-                        <a href="../edit.php?table=users&id=<?= $row['id'] ?>" class="btn btn-warning">&#9998; Edit</a>
-                        <a href="../delete.php?table=users&id=<?= $row['id'] ?>"
+                        <a href="../edit.php?table=user&id=<?= $row['id'] ?>" class="btn btn-warning">&#9998; Edit</a>
+                        <a href="../delete.php?table=user&id=<?= $row['id'] ?>"
                            class="btn btn-danger"
                            onclick="return confirm('Yakin ingin menghapus user ini?')">&#128465; Hapus</a>
                     </td>
@@ -50,7 +50,7 @@ $users = $conn->query("SELECT * FROM users");
                 <tr>
                     <td colspan="5">
                         <div class="empty-state">
-                            <p>Belum ada data users. <a href="../create.php?table=users">Tambah sekarang</a></p>
+                            <p>Belum ada data users. <a href="../create.php?table=user">Tambah sekarang</a></p>
                         </div>
                     </td>
                 </tr>
@@ -60,4 +60,3 @@ $users = $conn->query("SELECT * FROM users");
 </div>
 
 <?php include $base_path . 'includes/footer.php'; ?>
-

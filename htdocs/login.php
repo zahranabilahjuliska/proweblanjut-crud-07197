@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (empty($email) || empty($passw)) {
         $error = 'Email dan password wajib diisi!';
     } else {
-        $stmt = $conn->prepare("SELECT id, name, passw FROM users WHERE email = ?");
+        $stmt = $conn->prepare("SELECT id, name, passw FROM user WHERE email = ?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $result = $stmt->get_result();

@@ -12,9 +12,9 @@ include $base_path . 'koneksi.php';
 include $base_path . 'includes/header.php';
 
 // Hitung total data
-$total_users  = $conn->query("SELECT COUNT(*) as total FROM users")->fetch_assoc()['total'];
-$total_barang = $conn->query("SELECT COUNT(*) as total FROM products")->fetch_assoc()['total'];
-$total_stok   = $conn->query("SELECT SUM(stok) as total FROM products")->fetch_assoc()['total'] ?? 0;
+$total_users  = $conn->query("SELECT COUNT(*) as total FROM user")->fetch_assoc()['total'];
+$total_barang = $conn->query("SELECT COUNT(*) as total FROM barang")->fetch_assoc()['total'];
+$total_stok   = $conn->query("SELECT SUM(stok) as total FROM barang")->fetch_assoc()['total'] ?? 0;
 ?>
 
 <!-- Stats -->
@@ -49,7 +49,7 @@ $total_stok   = $conn->query("SELECT SUM(stok) as total FROM products")->fetch_a
         <a href="data_users.php" class="btn btn-secondary">Lihat Semua</a>
     </div>
     <?php
-    $users = $conn->query("SELECT * FROM users LIMIT 5");
+    $users = $conn->query("SELECT * FROM user LIMIT 5");
     ?>
     <table>
         <thead>
@@ -84,7 +84,7 @@ $total_stok   = $conn->query("SELECT SUM(stok) as total FROM products")->fetch_a
         <a href="data_barang.php" class="btn btn-secondary">Lihat Semua</a>
     </div>
     <?php
-    $barang = $conn->query("SELECT * FROM products LIMIT 5");
+    $barang = $conn->query("SELECT * FROM barang LIMIT 5");
     ?>
     <table>
         <thead>
@@ -117,4 +117,3 @@ $total_stok   = $conn->query("SELECT SUM(stok) as total FROM products")->fetch_a
 </div>
 
 <?php include $base_path . 'includes/footer.php'; ?>
-

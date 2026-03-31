@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $error = 'Konfirmasi password tidak cocok!';
     } else {
         // Cek email sudah ada
-        $cek = $conn->prepare("SELECT id FROM users WHERE email = ?");
+        $cek = $conn->prepare("SELECT id FROM user WHERE email = ?");
         $cek->bind_param("s", $email);
         $cek->execute();
         $cek->store_result();
@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($cek->num_rows > 0) {
             $error = 'Email sudah digunakan, coba yang lain!';
         } else {
-            $stmt = $conn->prepare("INSERT INTO users (name, email, passw) VALUES (?, ?, ?)");
+            $stmt = $conn->prepare("INSERT INTO user (name, email, passw) VALUES (?, ?, ?)");
             $stmt->bind_param("sss", $name, $email, $passw);
 
             if ($stmt->execute()) {

@@ -2,7 +2,7 @@
 $host   = 'localhost';
 $user   = 'root';
 $pass   = '';
-$dbname = 'crud_pwl';
+$dbname = 'a122407197_crud';
 
 $conn = new mysqli($host, $user, $pass, $dbname);
 
