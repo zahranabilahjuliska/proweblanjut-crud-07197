@@ -105,6 +105,26 @@ body {
     font-size: 15px;
 }
 
+.nav-logout {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    color: #fca5a5;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.2s;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 16px;
+}
+
+.nav-logout:hover {
+    background: rgba(239,68,68,0.15);
+    color: #f87171;
+}
+
 /* ── MAIN CONTENT ── */
 .main {
     margin-left: var(--sidebar-w);

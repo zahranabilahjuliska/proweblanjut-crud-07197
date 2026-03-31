@@ -4,7 +4,7 @@ $current = basename($_SERVER['PHP_SELF']);
 $current_dir = basename(dirname($_SERVER['PHP_SELF']));
 ?>
 <div class="sidebar">
-    <div class="sidebar-title">MENU</div>
+    <div class="sidebar-title">Manajemen Inventaris</div>
     <nav>
         <a href="<?= $base_path ?? '../' ?>pages/dashboard.php"
            class="<?= ($current == 'dashboard.php') ? 'active' : '' ?>">
@@ -19,4 +19,10 @@ $current_dir = basename(dirname($_SERVER['PHP_SELF']));
             <span class="icon">&#128230;</span> Data Barang
         </a>
     </nav>
+
+    <div style="margin-top: auto; padding: 16px 10px 0;">
+        <a href="<?= $base_path ?? '../' ?>logout.php" class="nav-logout">
+            <span class="icon">&#128682;</span> Logout
+        </a>
+    </div>
 </div>
