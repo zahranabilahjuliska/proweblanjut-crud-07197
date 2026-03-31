@@ -117,3 +117,4 @@ $total_stok   = $conn->query("SELECT SUM(stok) as total FROM products")->fetch_a
 </div>
 
 <?php include $base_path . 'includes/footer.php'; ?>
+

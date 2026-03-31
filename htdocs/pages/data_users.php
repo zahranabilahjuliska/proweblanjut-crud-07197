@@ -60,3 +60,4 @@ $users = $conn->query("SELECT * FROM users");
 </div>
 
 <?php include $base_path . 'includes/footer.php'; ?>
+
