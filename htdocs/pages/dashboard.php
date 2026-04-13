@@ -90,6 +90,7 @@ $total_stok   = $conn->query("SELECT SUM(stok) as total FROM barang")->fetch_ass
         <thead>
             <tr>
                 <th>ID</th>
+                <th>Foto</th>
                 <th>Nama Produk</th>
                 <th>Harga</th>
                 <th>Stok</th>
@@ -100,6 +101,20 @@ $total_stok   = $conn->query("SELECT SUM(stok) as total FROM barang")->fetch_ass
                 <?php while ($row = $barang->fetch_assoc()): ?>
                 <tr>
                     <td><?= $row['id'] ?></td>
+                    <td>
+                        <?php if (!empty($row['gambar']) && file_exists('../foto/' . $row['gambar'])): ?>
+                            <img src="../foto/<?= htmlspecialchars($row['gambar']) ?>"
+                                 alt="<?= htmlspecialchars($row['nama_produk']) ?>"
+                                 style="width:50px; height:50px; object-fit:cover;
+                                        border-radius:8px; border:1px solid #e2e8f0;">
+                        <?php else: ?>
+                            <div style="width:50px; height:50px; background:#f1f5f9; border-radius:8px;
+                                        display:flex; align-items:center; justify-content:center;
+                                        font-size:18px; border:1px solid #e2e8f0;">
+                                &#128247;
+                            </div>
+                        <?php endif; ?>
+                    </td>
                     <td><?= htmlspecialchars($row['nama_produk']) ?></td>
                     <td>Rp <?= number_format($row['harga'], 0, ',', '.') ?></td>
                     <td>
@@ -110,7 +125,7 @@ $total_stok   = $conn->query("SELECT SUM(stok) as total FROM barang")->fetch_ass
                 </tr>
                 <?php endwhile; ?>
             <?php else: ?>
-                <tr><td colspan="4" class="empty-state">Belum ada data barang.</td></tr>
+                <tr><td colspan="5" class="empty-state">Belum ada data barang.</td></tr>
             <?php endif; ?>
         </tbody>
     </table>
