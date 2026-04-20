@@ -11,7 +11,9 @@ $page_title = 'Data Users';
 include $base_path . 'koneksi.php';
 include $base_path . 'includes/header.php';
 
-$users = $conn->query("SELECT * FROM user");
+// Ambil semua user - Prepared Statement via PDO
+$users = $pdo->query("SELECT id, name, email FROM user ORDER BY id ASC");
+$rows  = $users->fetchAll();
 ?>
 
 <div class="card">
@@ -31,21 +33,30 @@ $users = $conn->query("SELECT * FROM user");
             </tr>
         </thead>
         <tbody>
-            <?php if ($users->num_rows > 0): ?>
-                <?php while ($row = $users->fetch_assoc()): ?>
+            <?php if (count($rows) > 0): ?>
+                <?php foreach ($rows as $row): ?>
                 <tr>
-                    <td><?= $row['id'] ?></td>
-                    <td><?= htmlspecialchars($row['name']) ?></td>
-                    <td><?= htmlspecialchars($row['email']) ?></td>
-                    <td><?= $row['passw'] ?></td>
-                    <td style="display:flex; gap:8px;">
-                        <a href="../edit.php?table=user&id=<?= $row['id'] ?>" class="btn btn-warning">&#9998; Edit</a>
-                        <a href="../delete.php?table=user&id=<?= $row['id'] ?>"
-                           class="btn btn-danger"
-                           onclick="return confirm('Yakin ingin menghapus user ini?')">&#128465; Hapus</a>
+                    <td><?= (int) $row['id'] ?></td>
+                    <td><?= htmlspecialchars($row['name'],  ENT_QUOTES, 'UTF-8') ?></td>
+                    <td><?= htmlspecialchars($row['email'], ENT_QUOTES, 'UTF-8') ?></td>
+                    <!-- Password tidak ditampilkan demi keamanan -->
+                    <td><span style="color:#94a3b8;font-size:13px;">••••••••</span></td>
+                    <td style="display:flex;gap:8px;">
+                        <a href="../edit.php?table=user&id=<?= (int) $row['id'] ?>"
+                           class="btn btn-warning">&#9998; Edit</a>
+
+                        <!-- Hapus pakai POST + CSRF, bukan link GET -->
+                        <form method="POST" action="../delete.php"
+                              onsubmit="return confirm('Yakin ingin menghapus user ini?')"
+                              style="display:inline;">
+                            <?= csrf_input() ?>
+                            <input type="hidden" name="table" value="user">
+                            <input type="hidden" name="id"    value="<?= (int) $row['id'] ?>">
+                            <button type="submit" class="btn btn-danger">&#128465; Hapus</button>
+                        </form>
                     </td>
                 </tr>
-                <?php endwhile; ?>
+                <?php endforeach; ?>
             <?php else: ?>
                 <tr>
                     <td colspan="5">

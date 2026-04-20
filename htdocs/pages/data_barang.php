@@ -11,7 +11,9 @@ $page_title = 'Data Barang';
 include $base_path . 'koneksi.php';
 include $base_path . 'includes/header.php';
 
-$barang = $conn->query("SELECT * FROM barang");
+// Ambil semua barang - PDO
+$barang = $pdo->query("SELECT * FROM barang ORDER BY id ASC");
+$items  = $barang->fetchAll();
 ?>
 
 <div class="card">
@@ -32,38 +34,45 @@ $barang = $conn->query("SELECT * FROM barang");
             </tr>
         </thead>
         <tbody>
-            <?php if ($barang->num_rows > 0): ?>
-                <?php while ($row = $barang->fetch_assoc()): ?>
+            <?php if (count($items) > 0): ?>
+                <?php foreach ($items as $row): ?>
                 <tr>
-                    <td><?= $row['id'] ?></td>
+                    <td><?= (int) $row['id'] ?></td>
                     <td>
                         <?php if (!empty($row['gambar']) && file_exists('../foto/' . $row['gambar'])): ?>
-                            <img src="../foto/<?= htmlspecialchars($row['gambar']) ?>"
-                                 alt="<?= htmlspecialchars($row['nama_produk']) ?>"
-                                 style="width:60px; height:60px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0;">
+                            <img src="../foto/<?= htmlspecialchars($row['gambar'], ENT_QUOTES, 'UTF-8') ?>"
+                                 alt="<?= htmlspecialchars($row['nama_produk'], ENT_QUOTES, 'UTF-8') ?>"
+                                 style="width:60px;height:60px;object-fit:cover;
+                                        border-radius:8px;border:1px solid #e2e8f0;">
                         <?php else: ?>
-                            <div style="width:60px; height:60px; background:#f1f5f9; border-radius:8px;
-                                        display:flex; align-items:center; justify-content:center;
-                                        font-size:22px; border:1px solid #e2e8f0;">
-                                &#128247;
-                            </div>
+                            <div style="width:60px;height:60px;background:#f1f5f9;border-radius:8px;
+                                        display:flex;align-items:center;justify-content:center;
+                                        font-size:22px;border:1px solid #e2e8f0;">&#128247;</div>
                         <?php endif; ?>
                     </td>
-                    <td><?= htmlspecialchars($row['nama_produk']) ?></td>
+                    <td><?= htmlspecialchars($row['nama_produk'], ENT_QUOTES, 'UTF-8') ?></td>
                     <td>Rp <?= number_format($row['harga'], 0, ',', '.') ?></td>
                     <td>
                         <span class="badge <?= $row['stok'] > 10 ? 'badge-green' : 'badge-yellow' ?>">
-                            <?= $row['stok'] ?> pcs
+                            <?= (int) $row['stok'] ?> pcs
                         </span>
                     </td>
-                    <td style="display:flex; gap:8px;">
-                        <a href="../edit.php?table=barang&id=<?= $row['id'] ?>" class="btn btn-warning">&#9998; Edit</a>
-                        <a href="../delete.php?table=barang&id=<?= $row['id'] ?>"
-                           class="btn btn-danger"
-                           onclick="return confirm('Yakin ingin menghapus barang ini?')">&#128465; Hapus</a>
+                    <td style="display:flex;gap:8px;">
+                        <a href="../edit.php?table=barang&id=<?= (int) $row['id'] ?>"
+                           class="btn btn-warning">&#9998; Edit</a>
+
+                        <!-- Hapus pakai POST + CSRF -->
+                        <form method="POST" action="../delete.php"
+                              onsubmit="return confirm('Yakin ingin menghapus barang ini?')"
+                              style="display:inline;">
+                            <?= csrf_input() ?>
+                            <input type="hidden" name="table" value="barang">
+                            <input type="hidden" name="id"    value="<?= (int) $row['id'] ?>">
+                            <button type="submit" class="btn btn-danger">&#128465; Hapus</button>
+                        </form>
                     </td>
                 </tr>
-                <?php endwhile; ?>
+                <?php endforeach; ?>
             <?php else: ?>
                 <tr>
                     <td colspan="6">

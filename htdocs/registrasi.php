@@ -5,39 +5,47 @@ include 'koneksi.php';
 $error   = '';
 $success = '';
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $name    = trim($_POST['name']);
-    $email   = trim($_POST['email']);
-    $passw   = $_POST['passw'];
-    $confirm = $_POST['confirm_passw'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    if (empty($name) || empty($email) || empty($passw) || empty($confirm)) {
-        $error = 'Semua field wajib diisi!';
-    } elseif (strlen($passw) < 6) {
-        $error = 'Password minimal 6 karakter!';
-    } elseif ($passw !== $confirm) {
-        $error = 'Konfirmasi password tidak cocok!';
+    // Validasi CSRF token
+    if (!validate_csrf_token($_POST['csrf_token'] ?? '')) {
+        $error = 'Permintaan tidak valid. Silakan coba lagi.';
     } else {
-        // Cek email sudah ada
-        $cek = $conn->prepare("SELECT id FROM user WHERE email = ?");
-        $cek->bind_param("s", $email);
-        $cek->execute();
-        $cek->store_result();
+        unset($_SESSION['csrf_token']);
 
-        if ($cek->num_rows > 0) {
-            $error = 'Email sudah digunakan, coba yang lain!';
+        $name    = trim($_POST['name'] ?? '');
+        $email   = trim($_POST['email'] ?? '');
+        $passw   = $_POST['passw'] ?? '';
+        $confirm = $_POST['confirm_passw'] ?? '';
+
+        // Validasi input
+        if (empty($name) || empty($email) || empty($passw) || empty($confirm)) {
+            $error = 'Semua field wajib diisi!';
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $error = 'Format email tidak valid!';
+        } elseif (strlen($passw) < 6) {
+            $error = 'Password minimal 6 karakter!';
+        } elseif ($passw !== $confirm) {
+            $error = 'Konfirmasi password tidak cocok!';
         } else {
-            $stmt = $conn->prepare("INSERT INTO user (name, email, passw) VALUES (?, ?, ?)");
-            $stmt->bind_param("sss", $name, $email, $passw);
+            // Cek email sudah ada - Prepared Statement
+            $cek = $pdo->prepare("SELECT id FROM user WHERE email = ?");
+            $cek->execute([$email]);
 
-            if ($stmt->execute()) {
-                $success = 'Registrasi berhasil! Silakan login.';
+            if ($cek->fetch()) {
+                $error = 'Email sudah digunakan, coba yang lain!';
             } else {
-                $error = 'Gagal mendaftar, coba lagi.';
+                // Hash password sebelum disimpan ke database
+                $hashed = password_hash($passw, PASSWORD_DEFAULT);
+
+                $stmt = $pdo->prepare("INSERT INTO user (name, email, passw) VALUES (?, ?, ?)");
+                if ($stmt->execute([$name, $email, $hashed])) {
+                    $success = 'Registrasi berhasil! Silakan login.';
+                } else {
+                    $error = 'Gagal mendaftar, coba lagi.';
+                }
             }
-            $stmt->close();
         }
-        $cek->close();
     }
 }
 ?>
@@ -112,23 +120,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <p class="subtitle">Daftarkan diri untuk menggunakan aplikasi</p>
 
         <?php if ($error): ?>
-            <div class="alert alert-danger"><?= $error ?></div>
+            <div class="alert alert-danger">
+                <?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?>
+            </div>
         <?php endif; ?>
         <?php if ($success): ?>
-            <div class="alert alert-success"><?= $success ?></div>
+            <div class="alert alert-success">
+                <?= htmlspecialchars($success, ENT_QUOTES, 'UTF-8') ?>
+            </div>
         <?php endif; ?>
 
         <form method="POST">
+            <?= csrf_input() ?>
+
             <div class="form-group">
                 <label>Nama</label>
                 <input type="text" name="name"
-                       value="<?= htmlspecialchars($_POST['name'] ?? '') ?>"
+                       value="<?= htmlspecialchars($_POST['name'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
                        placeholder="Masukkan nama lengkap" required>
             </div>
             <div class="form-group">
                 <label>Email</label>
                 <input type="email" name="email"
-                       value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
+                       value="<?= htmlspecialchars($_POST['email'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
                        placeholder="Masukkan email" required>
             </div>
             <div class="form-group">

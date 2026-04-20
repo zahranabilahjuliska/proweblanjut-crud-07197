@@ -2,76 +2,88 @@
 session_start();
 include 'koneksi.php';
 
-// Jika sudah login via session, langsung ke dashboard
+// Jika sudah login, langsung ke dashboard
 if (isset($_SESSION['user_id'])) {
     header("Location: pages/dashboard.php");
     exit;
 }
 
-// Jika belum login tapi ada cookie remember me, login otomatis
-if (isset($_COOKIE['remember_email']) && isset($_COOKIE['remember_passw'])) {
-    $cookie_email = $_COOKIE['remember_email'];
-    $cookie_passw = $_COOKIE['remember_passw'];
+// -------------------------------------------------------
+// Auto-login via remember me cookie
+// Cookie menyimpan ID user + token acak (bukan password)
+// -------------------------------------------------------
+if (isset($_COOKIE['remember_id']) && isset($_COOKIE['remember_token'])) {
+    $cookie_id    = (int) $_COOKIE['remember_id'];
+    $cookie_token = $_COOKIE['remember_token'];
 
-    $stmt = $conn->prepare("SELECT id, name, passw FROM user WHERE email = ?");
-    $stmt->bind_param("s", $cookie_email);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    $stmt = $pdo->prepare("SELECT id, name, remember_token FROM user WHERE id = ?");
+    $stmt->execute([$cookie_id]);
+    $u = $stmt->fetch();
 
-    if ($result->num_rows === 1) {
-        $user = $result->fetch_assoc();
-        if ($cookie_passw === $user['passw']) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['name']    = $user['name'];
-            header("Location: pages/dashboard.php");
-            exit;
-        }
+    if ($u && !empty($u['remember_token']) &&
+        password_verify($cookie_token, $u['remember_token'])) {
+        $_SESSION['user_id'] = $u['id'];
+        $_SESSION['name']    = $u['name'];
+        header("Location: pages/dashboard.php");
+        exit;
     }
-    $stmt->close();
+
+    // Token tidak valid, hapus cookie
+    setcookie('remember_id',    '', time() - 3600, '/', '', false, true);
+    setcookie('remember_token', '', time() - 3600, '/', '', false, true);
 }
 
 $error = '';
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $email    = trim($_POST['email']);
-    $passw    = $_POST['passw'];
-    $remember = isset($_POST['remember']);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    if (empty($email) || empty($passw)) {
-        $error = 'Email dan password wajib diisi!';
+    // Validasi CSRF token - cegah serangan CSRF
+    if (!validate_csrf_token($_POST['csrf_token'] ?? '')) {
+        $error = 'Permintaan tidak valid. Silakan coba lagi.';
     } else {
-        $stmt = $conn->prepare("SELECT id, name, passw FROM user WHERE email = ?");
-        $stmt->bind_param("s", $email);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        unset($_SESSION['csrf_token']);
 
-        if ($result->num_rows === 1) {
-            $user = $result->fetch_assoc();
+        $email    = trim($_POST['email'] ?? '');
+        $passw    = $_POST['passw'] ?? '';
+        $remember = isset($_POST['remember']);
 
-            if ($passw === $user['passw']) {
-                // Simpan session
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['name']    = $user['name'];
+        if (empty($email) || empty($passw)) {
+            $error = 'Email dan password wajib diisi!';
+        } else {
+            // Prepared statement - cegah SQL Injection
+            $stmt = $pdo->prepare("SELECT id, name, passw FROM user WHERE email = ?");
+            $stmt->execute([$email]);
+            $u = $stmt->fetch();
 
-                // Jika remember me dicentang, simpan cookie 7 hari
+            // password_verify - cek password yang sudah di-hash
+            if ($u && password_verify($passw, $u['passw'])) {
+                $_SESSION['user_id'] = $u['id'];
+                $_SESSION['name']    = $u['name'];
+
                 if ($remember) {
-                    setcookie('remember_email', $email, time() + (86400 * 7), '/');
-                    setcookie('remember_passw', $passw, time() + (86400 * 7), '/');
+                    // Buat token acak, simpan hash-nya di database
+                    $raw_token    = bin2hex(random_bytes(32));
+                    $hashed_token = password_hash($raw_token, PASSWORD_DEFAULT);
+
+                    $upd = $pdo->prepare("UPDATE user SET remember_token = ? WHERE id = ?");
+                    $upd->execute([$hashed_token, $u['id']]);
+
+                    // Simpan ke cookie dengan HttpOnly (tidak bisa diakses JavaScript)
+                    $expire = time() + (86400 * 7);
+                    setcookie('remember_id',    $u['id'],   $expire, '/', '', false, true);
+                    setcookie('remember_token', $raw_token, $expire, '/', '', false, true);
                 } else {
-                    // Jika tidak dicentang, hapus cookie jika ada
-                    setcookie('remember_email', '', time() - 3600, '/');
-                    setcookie('remember_passw', '', time() - 3600, '/');
+                    setcookie('remember_id',    '', time() - 3600, '/', '', false, true);
+                    setcookie('remember_token', '', time() - 3600, '/', '', false, true);
                 }
 
                 header("Location: pages/dashboard.php");
                 exit;
             } else {
-                $error = 'Password salah!';
+                // Pesan generik agar tidak bocorkan info akun
+                $error = 'Email atau password salah!';
             }
-        } else {
-            $error = 'Email tidak ditemukan!';
         }
-        $stmt->close();
     }
 }
 ?>
@@ -161,14 +173,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <p class="subtitle">Masuk ke akun kamu untuk melanjutkan</p>
 
         <?php if ($error): ?>
-            <div class="alert-danger"><?= $error ?></div>
+            <div class="alert-danger">
+                <?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?>
+            </div>
         <?php endif; ?>
 
         <form method="POST">
+            <?= csrf_input() ?>
+
             <div class="form-group">
                 <label>Email</label>
                 <input type="email" name="email"
-                       value="<?= htmlspecialchars($_COOKIE['remember_email'] ?? $_POST['email'] ?? '') ?>"
+                       value="<?= htmlspecialchars($_POST['email'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
                        placeholder="Masukkan email" required>
             </div>
             <div class="form-group">
@@ -177,10 +193,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                        placeholder="Masukkan password" required>
             </div>
 
-            <!-- Checkbox Remember Me -->
             <div class="remember-me">
                 <input type="checkbox" name="remember" id="remember"
-                       <?= isset($_COOKIE['remember_email']) ? 'checked' : '' ?>>
+                       <?= isset($_COOKIE['remember_id']) ? 'checked' : '' ?>>
                 <label for="remember">Ingat saya selama 7 hari</label>
             </div>
 

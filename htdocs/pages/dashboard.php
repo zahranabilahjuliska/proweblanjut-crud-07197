@@ -11,10 +11,10 @@ $page_title = 'Dashboard';
 include $base_path . 'koneksi.php';
 include $base_path . 'includes/header.php';
 
-// Hitung total data
-$total_users  = $conn->query("SELECT COUNT(*) as total FROM user")->fetch_assoc()['total'];
-$total_barang = $conn->query("SELECT COUNT(*) as total FROM barang")->fetch_assoc()['total'];
-$total_stok   = $conn->query("SELECT SUM(stok) as total FROM barang")->fetch_assoc()['total'] ?? 0;
+// Hitung total data menggunakan PDO
+$total_users  = $pdo->query("SELECT COUNT(*) FROM user")->fetchColumn();
+$total_barang = $pdo->query("SELECT COUNT(*) FROM barang")->fetchColumn();
+$total_stok   = $pdo->query("SELECT COALESCE(SUM(stok), 0) FROM barang")->fetchColumn();
 ?>
 
 <!-- Stats -->
@@ -23,21 +23,21 @@ $total_stok   = $conn->query("SELECT SUM(stok) as total FROM barang")->fetch_ass
         <div class="stat-icon blue">&#128100;</div>
         <div class="stat-info">
             <p>Total Users</p>
-            <h4><?= $total_users ?></h4>
+            <h4><?= (int) $total_users ?></h4>
         </div>
     </div>
     <div class="stat-card">
         <div class="stat-icon green">&#128230;</div>
         <div class="stat-info">
             <p>Total Barang</p>
-            <h4><?= $total_barang ?></h4>
+            <h4><?= (int) $total_barang ?></h4>
         </div>
     </div>
     <div class="stat-card">
         <div class="stat-icon yellow">&#128202;</div>
         <div class="stat-info">
             <p>Total Stok</p>
-            <h4><?= $total_stok ?></h4>
+            <h4><?= (int) $total_stok ?></h4>
         </div>
     </div>
 </div>
@@ -49,7 +49,8 @@ $total_stok   = $conn->query("SELECT SUM(stok) as total FROM barang")->fetch_ass
         <a href="data_users.php" class="btn btn-secondary">Lihat Semua</a>
     </div>
     <?php
-    $users = $conn->query("SELECT * FROM user LIMIT 5");
+    $users = $pdo->query("SELECT id, name, email FROM user ORDER BY id DESC LIMIT 5");
+    $rows  = $users->fetchAll();
     ?>
     <table>
         <thead>
@@ -61,15 +62,15 @@ $total_stok   = $conn->query("SELECT SUM(stok) as total FROM barang")->fetch_ass
             </tr>
         </thead>
         <tbody>
-            <?php if ($users->num_rows > 0): ?>
-                <?php while ($row = $users->fetch_assoc()): ?>
+            <?php if (count($rows) > 0): ?>
+                <?php foreach ($rows as $row): ?>
                 <tr>
-                    <td><?= $row['id'] ?></td>
-                    <td><?= htmlspecialchars($row['name']) ?></td>
-                    <td><?= htmlspecialchars($row['email']) ?></td>
+                    <td><?= (int) $row['id'] ?></td>
+                    <td><?= htmlspecialchars($row['name'],  ENT_QUOTES, 'UTF-8') ?></td>
+                    <td><?= htmlspecialchars($row['email'], ENT_QUOTES, 'UTF-8') ?></td>
                     <td><span class="badge badge-green">Aktif</span></td>
                 </tr>
-                <?php endwhile; ?>
+                <?php endforeach; ?>
             <?php else: ?>
                 <tr><td colspan="4" class="empty-state">Belum ada data users.</td></tr>
             <?php endif; ?>
@@ -84,7 +85,8 @@ $total_stok   = $conn->query("SELECT SUM(stok) as total FROM barang")->fetch_ass
         <a href="data_barang.php" class="btn btn-secondary">Lihat Semua</a>
     </div>
     <?php
-    $barang = $conn->query("SELECT * FROM barang LIMIT 5");
+    $barang = $pdo->query("SELECT * FROM barang ORDER BY id DESC LIMIT 5");
+    $items  = $barang->fetchAll();
     ?>
     <table>
         <thead>
@@ -97,33 +99,31 @@ $total_stok   = $conn->query("SELECT SUM(stok) as total FROM barang")->fetch_ass
             </tr>
         </thead>
         <tbody>
-            <?php if ($barang->num_rows > 0): ?>
-                <?php while ($row = $barang->fetch_assoc()): ?>
+            <?php if (count($items) > 0): ?>
+                <?php foreach ($items as $row): ?>
                 <tr>
-                    <td><?= $row['id'] ?></td>
+                    <td><?= (int) $row['id'] ?></td>
                     <td>
                         <?php if (!empty($row['gambar']) && file_exists('../foto/' . $row['gambar'])): ?>
-                            <img src="../foto/<?= htmlspecialchars($row['gambar']) ?>"
-                                 alt="<?= htmlspecialchars($row['nama_produk']) ?>"
-                                 style="width:50px; height:50px; object-fit:cover;
-                                        border-radius:8px; border:1px solid #e2e8f0;">
+                            <img src="../foto/<?= htmlspecialchars($row['gambar'], ENT_QUOTES, 'UTF-8') ?>"
+                                 alt="<?= htmlspecialchars($row['nama_produk'], ENT_QUOTES, 'UTF-8') ?>"
+                                 style="width:50px;height:50px;object-fit:cover;
+                                        border-radius:8px;border:1px solid #e2e8f0;">
                         <?php else: ?>
-                            <div style="width:50px; height:50px; background:#f1f5f9; border-radius:8px;
-                                        display:flex; align-items:center; justify-content:center;
-                                        font-size:18px; border:1px solid #e2e8f0;">
-                                &#128247;
-                            </div>
+                            <div style="width:50px;height:50px;background:#f1f5f9;border-radius:8px;
+                                        display:flex;align-items:center;justify-content:center;
+                                        font-size:18px;border:1px solid #e2e8f0;">&#128247;</div>
                         <?php endif; ?>
                     </td>
-                    <td><?= htmlspecialchars($row['nama_produk']) ?></td>
+                    <td><?= htmlspecialchars($row['nama_produk'], ENT_QUOTES, 'UTF-8') ?></td>
                     <td>Rp <?= number_format($row['harga'], 0, ',', '.') ?></td>
                     <td>
                         <span class="badge <?= $row['stok'] > 10 ? 'badge-green' : 'badge-yellow' ?>">
-                            <?= $row['stok'] ?> pcs
+                            <?= (int) $row['stok'] ?> pcs
                         </span>
                     </td>
                 </tr>
-                <?php endwhile; ?>
+                <?php endforeach; ?>
             <?php else: ?>
                 <tr><td colspan="5" class="empty-state">Belum ada data barang.</td></tr>
             <?php endif; ?>
